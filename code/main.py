@@ -90,7 +90,7 @@ def projSceneRecBoW(feature='placeholder', classifier='placeholder'):
     #   test_labels        1500x1   list
 
     ############################################################################
-    ## Step 1: Represent each image with the appropriate feature
+    # Step 1: Represent each image with the appropriate feature
     # Each function to construct features should return an N x d matrix, where
     # N is the number of paths passed to the function and d is the
     # dimensionality of each image representation. See the starter code for
@@ -113,7 +113,8 @@ def projSceneRecBoW(feature='placeholder', classifier='placeholder'):
         # or the length of your feature vectors), simply delete the vocab.npy
         # file and re-run main.py
         if not os.path.isfile('vocab.npy'):
-            print('No existing visual word vocabulary found. Computing one from training images.')
+            print(
+                'No existing visual word vocabulary found. Computing one from training images.')
 
             # Larger values will work better (to a point), but are slower to compute
             vocab_size = 200
@@ -139,7 +140,7 @@ def projSceneRecBoW(feature='placeholder', classifier='placeholder'):
         raise ValueError('Unknown feature type!')
 
     ############################################################################
-    ## Step 2: Classify each test image by training and using the appropriate classifier
+    # Step 2: Classify each test image by training and using the appropriate classifier
     # Each function to classify test features will return an N x 1 string array,
     # where N is the number of test cases and each entry is a string indicating
     # the predicted category for each test image. Each entry in
@@ -152,11 +153,13 @@ def projSceneRecBoW(feature='placeholder', classifier='placeholder'):
 
     if CLASSIFIER.lower() == 'nearest_neighbor':
         # YOU CODE nearest_neighbor_classify (see student.py)
-        predicted_categories = nearest_neighbor_classify(train_image_feats, train_labels, test_image_feats)
+        predicted_categories = nearest_neighbor_classify(
+            train_image_feats, train_labels, test_image_feats)
 
     elif CLASSIFIER.lower() == 'support_vector_machine':
         # YOU CODE svm_classify (see student.py)
-        predicted_categories = svm_classify(train_image_feats, train_labels, test_image_feats)
+        predicted_categories = svm_classify(
+            train_image_feats, train_labels, test_image_feats)
 
     elif CLASSIFIER.lower() == 'placeholder':
         # The placeholder classifier simply predicts a random category for every test case
@@ -167,7 +170,7 @@ def projSceneRecBoW(feature='placeholder', classifier='placeholder'):
         raise ValueError('Unknown classifier type')
 
     ############################################################################
-    ## Step 3: Build a confusion matrix and score the recognition system
+    # Step 3: Build a confusion matrix and score the recognition system
     # You do not need to code anything in this section.
 
     # If we wanted to evaluate our recognition method properly we would train

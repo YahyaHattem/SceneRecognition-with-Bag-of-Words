@@ -1,10 +1,17 @@
 import numpy as np
 import matplotlib
 from skimage.io import imread
-from skimage.color import rgb2grey
+from skimage.color import rgb2gray
 from skimage.feature import hog
 from skimage.transform import resize
 from scipy.spatial.distance import cdist
+import cv2
+from sklearn.svm import SVC
+from scipy.stats import mode
+from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
 
 
 def get_tiny_images(image_paths):
@@ -38,9 +45,17 @@ def get_tiny_images(image_paths):
                          skimage.io.imread, np.reshape
     """
 
-    # TODO: Implement this function!
+    tiny_images = np.zeros((len(image_paths), 16*16))
 
-    return np.array([])
+    for number, data in enumerate(image_paths):
+        image = imread(data)
+        image_resized = cv2.resize(
+            image, (16, 16), interpolation=cv2.INTER_AREA)
+        image_normalized = (
+            image_resized - np.mean(image_resized)) / np.std(image_resized)
+        tiny_images[number, :] = image_normalized.flatten()
+
+    return tiny_images
 
 
 def build_vocabulary(image_paths, vocab_size):
@@ -113,9 +128,24 @@ def build_vocabulary(image_paths, vocab_size):
     details)
     """
 
-    # TODO: Implement this function!
+    ppc = 4  # pixels per cell
+    cpb = 4  # cells per block
 
-    return np.array([])
+    histogram = []
+
+    for img in image_paths:
+        img = imread(img)
+        histo = hog(img, pixels_per_cell=(ppc, ppc),
+                    cells_per_block=(cpb, cpb), feature_vector=True)
+        histo_reshaped = histo.reshape(-1, 9*cpb*cpb)
+        histogram.extend(histo_reshaped)
+
+    histogram = np.array(histogram)
+
+    kmeans = MiniBatchKMeans(n_clusters=vocab_size, n_init=10, max_iter=100, tol=0.0001,
+                             random_state=7).fit(histogram)
+
+    return np.array(kmeans.cluster_centers_)
 
 
 def get_bags_of_words(image_paths):
@@ -152,8 +182,21 @@ def get_bags_of_words(image_paths):
     print('Loaded vocab from file.')
 
     # TODO: Implement this function!
+    final = np.zeros((len(image_paths), 200))
 
-    return np.array([])
+    ppc = 4  # pixels per cell
+    cpb = 4  # cells per block
+
+    for i, img in enumerate(image_paths):
+        img = imread(img)
+        hist = hog(img, pixels_per_cell=(ppc, ppc),
+                   cells_per_block=(cpb, cpb), feature_vector=True)
+        hist_reshaped = hist.reshape(-1, 9*cpb*cpb)
+        distances = cdist(hist_reshaped, vocab, 'euclidean')
+        for x in range(len(hist_reshaped)):
+            Sorted = np.argmin(distances[x, :])
+            final[i][Sorted] += 1
+    return final
 
 
 def svm_classify(train_image_feats, train_labels, test_image_feats):
@@ -179,9 +222,17 @@ def svm_classify(train_image_feats, train_labels, test_image_feats):
     above in just one call! Be sure to read the documentation carefully.
     """
 
-    # TODO: Implement this function!
+    svc = SVC()
 
-    return np.array([])
+    hp = {'C': [0.1, 1, 10], 'kernel': [
+        'rbf', 'linear'], 'gamma': np.logspace(-3, 2, 6)}
+
+    grid = GridSearchCV(svc, param_grid=hp, cv=10)
+    grid.fit(train_image_feats, train_labels)
+
+    y_pred = grid.predict(test_image_feats)
+
+    return y_pred
 
 
 def nearest_neighbor_classify(train_image_feats, train_labels, test_image_feats):
@@ -223,16 +274,15 @@ def nearest_neighbor_classify(train_image_feats, train_labels, test_image_feats)
         scipy.spatial.distance.cdist, np.argsort, scipy.stats.mode
     """
 
-    k = 1
+    k = 14
 
-    # Gets the distance between each test image feature and each train image feature
-    # e.g., cdist
     distances = cdist(test_image_feats, train_image_feats, 'euclidean')
+    label = []
 
-    # TODO:
-    # 1) Find the k closest features to each test image feature in euclidean space
-    # 2) Determine the labels of those k features
-    # 3) Pick the most common label from the k
-    # 4) Store that label in a list
-
-    return np.array([])
+    for x in range(len(test_image_feats)):
+        Sorted = np.argsort(distances[x, :])
+        neighbours = [train_labels[Sorted[y]] for y in range(k)]
+        nearest_neighbor = mode(neighbours)
+        label.append(nearest_neighbor[0][0])
+    label = np.asarray(label)
+    return label
