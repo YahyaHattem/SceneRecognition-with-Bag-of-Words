@@ -1,2 +1,2 @@
-# SceneRecognition
+# SceneRecognition With Bag Of Words
  
